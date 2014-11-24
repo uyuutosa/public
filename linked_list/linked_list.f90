@@ -1119,105 +1119,78 @@ contains
 ! unit test area********************************** 
     subroutine test_linked_list()
         type(node), pointer :: list => null(),&
-                              &str => null(),&
-                              &ret => null(),&
-                              &ret2 => null(),&
-                              &str3 => null(),&
-                              &hlist => null()
-        integer :: intarr(5) = 10
+                              &list2 => null(),&
+                              &list3 => null(),&
+                              &str => null()
+        integer :: intarr(2) = 10
         character(3) :: chaarr(3) = "dddd" 
-        print *, "*************************************"
         print *, "Unit test for linked list module. "
-        print *, ""
         print *, "This module provids useful list structure."
         print *, "List have variable number of the 'node',"
-        print *, "which is minimum unit of list, it is"
-        print *, " a piece of piss that node is extracted, added"
+        print *, "which is minimum unit of list, is"
+        print *, "which is extracted, added"
         print *, "removed and so on from a list."
-        print *, "New node add to list is very simple. For instance,"
-        print *, "when you add integer '33' to list, you can entry"
-        print *, "a follow code like this,"
+        print *, ""
+        print *, "1. New node add to list."
         print *, ""
         print *, "call append(list, 33)"
+        print *, ""
         call append(list, 33)
-        print *, "Input completed. Confirmation can input follow code"
-        print *, "call show_list(list)"
+        print *, "2. List supports some types, int, double, string, array..."
+        print *, ""
+        print *, "call append(list, 1)"
+        print *, "call append(list, 3.14)"
+        print *, "call append_arr(list, intarr) !integer :: intarr(5) = 10"
+        print *, "call string(str, 'hello')"
+        print *, "call append_list(list, str)"
+        print *, ""
+        call append(list, 1)
         call append_arr(list, intarr)
-        call show_list(list)
+        call string(str, "hello")
+        call append_list(list, str)
+        print *, "3. Nested list is  supported."
+        print *, ""
+        print *, "call append_list(list, list2)"
+        print *, ""
+        call append(list2, 10)
+        call append_list(list, list2)
+        print *, "4. Associative array is also suported"
+        print *, ""
+        print *, "call append_hash(list, 'hei', 'ho')"
+        print *, ""
         call append_hash(list, "hei", "ho")
-        call list_deallocate(list)
-        return!
-!
-        call append(list, 15)
-        call append(list, "spam")
-!        call append_real(list, 15.5)
-        call append(hlist, "bbb")
-        call append(hlist, "ccc")
-       ! call append_hash_list(list, hlist)
-!        call append(list, 48.6)
-        print *, "call append(list, 33)"
-        call append_hash(list, "asay", "konichiha")
-!        print *, get_n(list)
-        print *, "call append(list, 33)"
-        call append_blank(list) 
-        print *, "call append(list, 33)"
-       call append_hash(list, "foo", "bar")
-!       call insert_blank(list, 5, 1, "pre")
-        print *, "call append(list, 33)"
-        call list_deallocate(hlist)
-!        call list_deallocate(list)
-!        print *, get_n(list)
-!        call n_update(list)
-        call key_val(list)
-!        print *, get_val(list, "asay")
-        
-        call get_keys(list, ret)
+        print *, "5. The contents of list is able to view as follows."
+        print *, ""
+        print *, "call show_list(list)"
+        print *, ""
+        print *, "list = "
         call show_list(list)
-        call show_list(ret)
-        print *, "*************************************"
-
-        !call list_init(str3)
-        !call append_chararr(str3, chaarr)
-
-        print *, "string area"
-       call string(str, "  asdf,gsdlkfj  ")
-!       print *, get_str(str)
-!        call string(str3, "  ardf,gsdlkfj  ")
-!       print *, match_str(str, str3)
-        call strip(str)
-!        call split(str,ret2)
-!        call show_list(ret2)
-!        call append_list(ret2, str3)
-!        print *, "**************************"
-        call show_list(ret2)
-        call append_list(ret2, list)
-        call show_list(ret2)
-        print *, "**************************"
-10      if(loop(ret2)) then
-            call show_list(ret2, ret2%n)
-            goto 10
-        end if
-        call list_deallocate(ret2)
-        call append(str3, 3)
-        !call append(str3, 3.14)
-        call string(ret2, "konnichiha")
-        call append_list(str3, ret2)
-        call append_char(str3, "aiaia")
-        call append(str3, 5)
-        call append(str3, 5)
-        call append(str3, 5)
-        call refer(str3,1)
-20      if(loop(str3)) then
-            call show_list(str3, str3%n)
-            goto 20
-        end if
-        call list_deallocate(str3)
-        
-        
-!        print *, get_n(list)
-        print *, "Unit test done."
+        print *, ""
+        print *, "6. Iteration is easy. function loop is supported."
+        print *, ""
+        print *, "do while(loop(list))"
+        print *, "    call append(list3, list3%n)"
+        print *, "end do "
+        print *, ""
+        do while(loop(list))
+            call append(list3, list%n)
+        end do 
+        print *, "list3 = "
+        call show_list(list3)
+        print *, ""
+        print *, "7.List is not deallocated automatically." 
+        print *, "Deallocation is needed. 'list_deallocate' "
+        print *, "deallocats all nodes recursively."
+        print *, ""
+        print *, "call list_deallocate(list)"
+        print *, "call list_deallocate(list3)"
+        call list_deallocate(list)
+        call list_deallocate(list3)
+        print *, "Deallocation is done. If any error is not occur,"
+        print *, "this unit test is successful."
     end subroutine
-    
+
+!utility functions ---------------------------------------- 
     subroutine append_order(curr_node, param)
         type(data_order) :: param
         type(node), pointer :: curr_node, next_node => null()

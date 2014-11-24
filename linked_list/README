@@ -1,0 +1,51 @@
+ Unit test for linked list module. 
+ This module provids useful list structure.
+ List have variable number of the 'node',
+ which is minimum unit of list, is
+ which is extracted, added
+ removed and so on from a list.
+ 
+ 1. New node add to list.
+ 
+ call append(list, 33)
+ 
+ 2. List supports some types, int, double, string, array...
+ 
+ call append(list, 1)
+ call append(list, 3.14)
+ call append_arr(list, intarr) !integer :: intarr(5) = 10
+ call string(str, 'hello')
+ call append_list(list, str)
+ 
+ 3. Nested list is  supported.
+ 
+ call append_list(list, list2)
+ 
+ 4. Associative array is also suported
+ 
+ call append_hash(list, 'hei', 'ho')
+ 
+ 5. The contents of list is able to view as follows.
+ 
+ call show_list(list)
+ 
+ list = 
+[    33,     1, array(    10,    10,  ), [ hello (string)], [    10,  ], hei:ho ]
+ 
+ 6. Iteration is easy. function loop is supported.
+ 
+ do while(loop(list))
+     call append(list3, list3%n)
+ end do 
+ 
+ list3 = 
+[     1,     2,     3,     4,     5,     6 ]
+ 
+ 7.List is not deallocated automatically.
+ Deallocation is needed. 'list_deallocate' 
+ deallocats all nodes recursively.
+ 
+ call list_deallocate(list)
+ call list_deallocate(list3)
+ Deallocation is done. If any error is not occur,
+ this unit test is successful.
