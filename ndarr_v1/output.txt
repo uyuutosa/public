@@ -1,0 +1,96 @@
+1. array is able to be viewed with following format
+a =
+[0.00e+00 1.00e+00 ]
+
+b =
+[[0.00e+00 1.00e+00 ]
+ [2.00e+00 3.00e+00 ]
+ [4.00e+00 5.00e+00 ]]
+
+2. Binary operation is supported.
+a + 2 - a * a / 4 =
+[2.00e+00 2.75e+00 ]
+
+
+3. So-called 'broadcast' tecnhnic is supported.
+a + b = [0 1] + [[0 1], [2 3], [4 5]] =
+[[0.00e+00 2.00e+00 ]
+ [2.00e+00 4.00e+00 ]
+ [4.00e+00 6.00e+00 ]]
+
+a + b + c + d + e + f + g
+ = {is also able to be calculeted but too big to output.}
+
+4. Product of dot, cross and diad is suported.
+The dot product of a and b is 
+[[1.00e+00 3.00e+00 5.00e+00 ]
+ [1.00e+00 3.00e+00 5.00e+00 ]
+ [1.00e+00 3.00e+00 5.00e+00 ]]
+
+The cross product of d and c is 
+[[0.00e+00 -2.00e+00 -4.00e+00 ]
+ [0.00e+00 -2.00e+00 -4.00e+00 ]
+ [0.00e+00 -2.00e+00 -4.00e+00 ]]
+
+The diadic product of a and b is 
+[[[[0.00e+00 0.00e+00 ]
+   [0.00e+00 0.00e+00 ]
+   [0.00e+00 0.00e+00 ]]
+  [[0.00e+00 1.00e+00 ]
+   [0.00e+00 1.00e+00 ]
+   [0.00e+00 1.00e+00 ]]]
+ [[[0.00e+00 2.00e+00 ]
+   [0.00e+00 2.00e+00 ]
+   [0.00e+00 2.00e+00 ]]
+  [[0.00e+00 3.00e+00 ]
+   [0.00e+00 3.00e+00 ]
+   [0.00e+00 3.00e+00 ]]]
+ [[[0.00e+00 4.00e+00 ]
+   [0.00e+00 4.00e+00 ]
+   [0.00e+00 4.00e+00 ]]
+  [[0.00e+00 5.00e+00 ]
+   [0.00e+00 5.00e+00 ]
+   [0.00e+00 5.00e+00 ]]]]
+
+
+5. Universal function is roughly supported.
+sin(b) = 
+[[0.00e+00 8.41e-01 ]
+ [9.09e-01 1.41e-01 ]
+ [-7.57e-01 -9.59e-01 ]]
+
+fabs(b) = 
+[[0.00e+00 1.00e+00 ]
+ [2.00e+00 3.00e+00 ]
+ [4.00e+00 5.00e+00 ]]
+
+
+6. Transpose is supported.
+b's dimension transpose [0,1] to [1,0] as fllows.
+[[0.00e+00 2.00e+00 4.00e+00 ]
+ [1.00e+00 3.00e+00 5.00e+00 ]]
+
+c's dimension transpose [0,1,2] to [0,2,1] as fllows.
+[[[0.00e+00 2.00e+00 4.00e+00 ]
+  [1.00e+00 3.00e+00 5.00e+00 ]]
+ [[6.00e+00 8.00e+00 1.00e+01 ]
+  [7.00e+00 9.00e+00 1.10e+01 ]]
+ [[1.20e+01 1.40e+01 1.60e+01 ]
+  [1.30e+01 1.50e+01 1.70e+01 ]]
+ [[1.80e+01 2.00e+01 2.20e+01 ]
+  [1.90e+01 2.10e+01 2.30e+01 ]]]
+
+c's dimension transpose [0,1,2] to [2,1,0] as fllows.
+[[[0.00e+00 6.00e+00 1.20e+01 1.80e+01 ]
+  [2.00e+00 8.00e+00 1.40e+01 2.00e+01 ]
+  [4.00e+00 1.00e+01 1.60e+01 2.20e+01 ]]
+ [[1.00e+00 7.00e+00 1.30e+01 1.90e+01 ]
+  [3.00e+00 9.00e+00 1.50e+01 2.10e+01 ]
+  [5.00e+00 1.10e+01 1.70e+01 2.30e+01 ]]]
+
+
+7. Other utility menber function is provided a little.
+min(b) =  0.00e+00
+sum(b) =  5.00e+00
+sum(b) =  1.50e+01
+mean(b) =  2.50e+00
