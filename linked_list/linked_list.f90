@@ -1184,6 +1184,7 @@ contains
         print *, ""
         print *, "call list_deallocate(list)"
         print *, "call list_deallocate(list3)"
+        print *, ""
         call list_deallocate(list)
         call list_deallocate(list3)
         print *, "Deallocation is done. If any error is not occur,"

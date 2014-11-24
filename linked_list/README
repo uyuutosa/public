@@ -47,5 +47,6 @@
  
  call list_deallocate(list)
  call list_deallocate(list3)
+ 
  Deallocation is done. If any error is not occur,
  this unit test is successful.
