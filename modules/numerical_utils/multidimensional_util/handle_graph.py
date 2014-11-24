@@ -93,6 +93,7 @@ class root_prop():
         return self.decolst[gnum]["box"] 
 
 class handle_graph():
+    grace = grace_util()
     def set_xlabel_all(self, name, gnumlim):
         self.grace.prop.xlabel_all_input(name, gnumlim)
         for i in range(gnumlim): self.root.input_xname(name, i)
@@ -159,8 +160,8 @@ class handle_graph():
     def set_mk(self, size=1, color=0, mstyle=1, fcolor=None, fptn=1, lwidth=1, lstyle=1, gnum=0, snum=0):
         self.grace.prop.mk_input(size, color, mstyle, fcolor, fptn, lwidth, lstyle, gnum, snum)
 
-    def set_lineall(self, select=0, size=1, color=1, lstyle=1):
-        self.grace.prop.lineall_input(select, size, color, lstyle)
+    def set_lineall(self, size=1, color=1, lstyle=1):
+        self.grace.prop.lineall_input(size, color, lstyle)
 
     def set_mkall(self, size=1, color=1, mstyle=1, fptn=[1], lwidth=[1], lstyle=[1]):
         self.grace.prop.mkall_input(size, color, mstyle, fptn, lwidth, lstyle)
@@ -186,3 +187,37 @@ class handle_graph():
     def set_line(self, loc, lstyle=1, lwidth=1, lcolor=1, arrow=0, atype=0, alength=0, alayout=(1,1), loctype="view", gnum=0, xonly=False, yonly=False):
         self.grace.prop.line_input(loc, lstyle, lwidth, lcolor, arrow, atype, alength, alayout, loctype, gnum, xonly, yonly)
     
+
+    def view_colmap(self,  arrs, layout="simple", device="png", opt="colz", palette="simple", serial=False):
+        from modules.graph_utils.root_util.root_util import root_util
+        r = root_util()
+        layoutdic = {"single": r.single_layout,
+                     "dual": r.dual_layout,
+                     "sextuple" : r.sextuple_layout}
+        palettedic = {"simple": r.mypalette1,
+                      "simple3": r.mypalette3,
+                      "simple4": r.mypalette4,
+                      "rainbow": r.palette_rainbow,
+                      "r2b": r.palette_red2blue}
+
+        arrs = self.get_data()
+        x,y,z = arrs
+        
+        if serial:
+            bin_xtpl = tuple(x[0]) if x[0][1] != x[0][0] else tuple(x.transpose()[0]) # check the greater direction.
+            bin_ytpl = tuple(y[0]) if y[0][1] != y[0][0] else tuple(y.transpose()[0])
+            r.set_xyzdata(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), bin_xtpl, bin_ytpl, 0, 0)
+        else:
+            r.set_xyzdata_tgraph(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), 0, 0)
+        xlim = self.root.get_xlim(0)
+        ylim = self.root.get_ylim(0)
+        zlim = self.root.get_zlim(0)
+        if type(xlim) != type(None): r.set_xlim(xlim[0], xlim[1], 0)
+        if type(ylim) != type(None): r.set_ylim(ylim[0], ylim[1], 0)
+        if type(zlim) != type(None): r.set_zlim(zlim[0], zlim[1], 0)
+        r.set_xname(self.root.get_xname(0), 0)
+        r.set_yname(self.root.get_yname(0), 0)
+        r.set_zname(self.root.get_zname(0), 0)
+        layoutdic[layout](opt)
+        palettedic[palette]()
+        r.view_graph()

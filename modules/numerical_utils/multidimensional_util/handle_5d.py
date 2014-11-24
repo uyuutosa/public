@@ -198,7 +198,15 @@ class handle_5d(handle_graph):
         self.trap = h4d.handle_4d()
         self.trap.set_multi(tmplst, T=True)
 
-    def view(self, layout="simple", abcs=0,lgtd=1, transpose=False, T=False, sepnum=1, filename="tmp", device="PDF", hgrid=1, vgrid=1, glim=None, dump=False):
+    def mean_axis(self, T=False):
+        tmplst = []
+        for obj in self.datlst:
+            obj.mean_axis(T)
+            tmplst += [obj.mean]
+        self.mean = h4d.handle_4d()
+        self.mean.set_multi(tmplst, T=True)
+
+    def view(self, layout="simple", abcs=0,lgtd=1, transpose=False, T=False, sepnum=1, filename="tmp", device="PDF", hgrid=1, vgrid=1, glim=None, dump=False, logx=False, logy=False):
         self.hist.input()
         layout = str(layout)
         layoutdic = {
@@ -268,7 +276,7 @@ class handle_5d(handle_graph):
             self.grace.initialize()
             plotnum += 1
 
-    def tevo(self, layout="simple", abcs=0,lgtd=1, T=False, sepnum=1, dirname="tmpdir", filename="tmp", device="PDF", hgrid=1, vgrid=1, show=False):
+    def tevo(self, layout="simple", abcs=0,lgtd=1, T=False, sepnum=1, dirname="tmpdir", filename="tmp", device="PDF", hgrid=1, vgrid=1, show=False, logx=False, logy=False):
         self.hist.input()
         layout = str(layout)
         layoutdic = {
@@ -287,6 +295,9 @@ class handle_5d(handle_graph):
                     }
         self.grace.prop.plot_init()
         self.T_align(T)
+
+        if type(logx) == list : logx = iter(logx)
+        if type(logy) == list : logy = iter(logy)
 
         arrs = []
         errs = []
@@ -312,6 +323,18 @@ class handle_5d(handle_graph):
             else:
                 layoutdic[layout](hgrid=hgrid, vgrid=vgrid)
             while gnum < gnumlim: 
+                #logscale setting--------------
+                if type(logx) != bool : 
+                    tmp_logx = logx.next()
+                else:
+                    tmp_logx = logx
+                if type(logy) != bool : 
+                    tmp_logy = logy.next()
+                else:
+                    tmp_logy = logy
+                if tmp_logx: self.set_xaxes(1,0,gnum)
+                if tmp_logy: self.set_yaxes(1,0,gnum)
+                #------------------------------
                 snumlim = snumlim_tmp if type(snumlim_tmp) == int else snumlim_tmp.next()
                 while snum < snumlim:
                     if type(errs[gnum][lgtd]) == type(None):

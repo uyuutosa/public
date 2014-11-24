@@ -24,7 +24,21 @@ def align_T(objlst, T):
     for obj in objlst:
         if obj.T != T: obj.transpose()
 
+
+## Handle 4 dimension(Max).
+#
+# Description\n
+#  handle_4d handle x, y, z and a that contain
+#  the 2d numpy ndarray.\n
+#  handle means that data can be manupulated and plotted easily.\n
+#  Array is desired at least three and these of two has a serial 
+#  in direction to an axis.\n In addtion, each direction of serial 
+#  is needed to differ from each other.
 class handle_4d(handle_graph):
+    ## Initilize.
+    #
+    # Initilize object. dlst a list object which
+    # include handle_3d objects.
     def __init__(self, dlst=None):
         self.x = None
         self.y = None
@@ -46,6 +60,11 @@ class handle_4d(handle_graph):
         if type(dlst) != type(None):
             self.set_multi(dlst)
     
+    ## Set multiple object of handle_3d
+    #
+    # Description
+    #  Make the handle_4d from multiple handle_3d object.
+    #  
     def set_multi(self, objlst, T=True):
         self.T = T
         xarr_lst = []
@@ -74,17 +93,17 @@ class handle_4d(handle_graph):
         self.zerr = array(zerr_lst) if type(zerr_lst[0]) != type(None) else None
         self.aerr = array(aerr_lst) if type(aerr_lst[0]) != type(None) else None
 
-    def transpose(self, T=None):
-        """
-        Transpose x, y, z, xerr, yerr and zerr when a follows condition is hold. 
 
-        Parameters
-        ----------
-        T : It may be three value.
-            - If T is True or False and T equals self.T, transpose is occurred.
-            - If T is None, transpose is occured.
-        arrs, errs = self.get_data(reterr=True)
-        """ 
+    ## Transpose all array.
+    #
+    # Description\n
+    #  Transpose all of attributed array. T is a sign whther the transpose occoured.\n
+    # 
+    # Argments\n
+    #  T -- It may be three value.\n
+    #    - If T is True or False and T equals self.T, transpose is occurred.\n
+    #    - If T is None, transpose is occured.\n
+    def transpose(self, T=None):
         arrs, errs = self.get_data(True)
         if T is None or T != self.T:
             self.dinput(
@@ -204,7 +223,7 @@ class handle_4d(handle_graph):
         s.seek(0)
         return ret
 
-    def view_col(self,  layout="simple", T=None, axtpl=(0,2,1), xlim=None, ylim=None, zlim=None, device="png", opt="colz", palette="simple"):
+    def view_col(self,  layout="simple", T=None, axtpl=(0,2,1), xlim=None, ylim=None, zlim=None, device="png", opt="colz", palette="simple", serial=False):
         from modules.graph_utils.root_util.root_util import root_util
         r = root_util()
         layoutdic = {"single": r.single_layout,
@@ -222,14 +241,26 @@ class handle_4d(handle_graph):
         y = arrs[axtpl[1]]
         z = arrs[axtpl[2]]
         
-        bin_xtpl = tuple(x[0]) if x[0][1] != x[0][0] else tuple(x.transpose()[0]) # check the greater direction.
-        bin_ytpl = tuple(y[0]) if y[0][1] != y[0][0] else tuple(y.transpose()[0])
-
-        r.set_xyzdata(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), bin_xtpl, bin_ytpl, 0, 0)
+        if serial:
+            bin_xtpl = tuple(x[0]) if x[0][1] != x[0][0] else tuple(x.transpose()[0]) # check the greater direction.
+            bin_ytpl = tuple(y[0]) if y[0][1] != y[0][0] else tuple(y.transpose()[0])
+            r.set_xyzdata(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), bin_xtpl, bin_ytpl, 0, 0)
+        else:
+            input("asdf")
+            r.set_xyzdata_tgraph(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), 0, 0)
         #r.set_xlim(bin_xtpl[0], bin_xtpl[-1], 0)
         #r.set_ylim(bin_ytpl[0], bin_ytpl[-1], 0)
         #r.show_prop()
         #r.set_prop()
+        xlim = self.root.get_xlim(0)
+        ylim = self.root.get_ylim(0)
+        zlim = self.root.get_zlim(0)
+        if type(xlim) != type(None): r.set_xlim(xlim[0], xlim[1], 0)
+        if type(ylim) != type(None): r.set_ylim(ylim[0], ylim[1], 0)
+        if type(zlim) != type(None): r.set_zlim(zlim[0], zlim[1], 0)
+        r.set_xname(self.root.get_xname(0), 0)
+        r.set_yname(self.root.get_yname(0), 0)
+        r.set_zname(self.root.get_zname(0), 0)
         layoutdic[layout](opt)
         palettedic[palette]()
         #r.dump_fig(fcnt(dirpath, filename, device))
@@ -300,6 +331,192 @@ class handle_4d(handle_graph):
         self.pcnv.T = self.T
         self.pcnv.dinput(con.get())
 
+    def envelope(self, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        arrs2 = obj.get_data()
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            a = h3d.handle_3d(x, y, z)
+            b = h3d.handle_3d(x2, y2, z2)
+            a.envelope(b, abcs=abcs, lgtd=lgtd)
+            lst += [a.env]
+
+        self.env = handle_4d()
+        self.env.set_multi(lst)
+        self.env.T = self.T
+
+    def phase_difference(self, obj, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        obj.transpose(T)
+        arrs2 = obj.get_data()
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            a = h3d.handle_3d(x, y, z)
+            b = h3d.handle_3d(x2, y2, z2)
+            a.phase_difference(b, abcs=abcs, lgtd=lgtd)
+            lst += [a.phd]
+
+        self.phd = handle_4d()
+        self.phd.set_multi(lst)
+        self.phd.T = self.T
+
+    def mean_axis(self, T=False):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+
+        if xarr is not None: xarr = xarr.mean(axis=0)
+        if yarr is not None: yarr = yarr.mean(axis=0)
+        if zarr is not None: zarr = zarr.mean(axis=0)
+
+        self.mean = h3d.handle_3d(xarr, yarr, zarr)
+
+
+        
+
+    def mean_power(self, obj, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        obj.transpose(T)
+        arrs2 = obj.get_data()
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            a = h3d.handle_3d(x, y, z)
+            b = h3d.handle_3d(x2, y2, z2)
+            a.mean_power(b, abcs=abcs, lgtd=lgtd)
+            lst += [a.mvi]
+
+        self.mvi = handle_4d()
+        self.mvi.set_multi(lst)
+        self.mvi.T = self.T
+
+    def reverse(self, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        self.rev = handle_4d()
+        self.rev.dinput([x[:,::-1] if x is not None else None for x in arrs])
+        self.rev.T = self.T
+
+
+    def pow_spec_ensemble(self, wid, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.pow_spec_ensemble(wid, abcs=abcs, lgtd=lgtd)
+            lst += [obj.epow]
+
+        self.epow = handle_4d()
+        self.epow.set_multi(lst)
+        self.epow.T = self.T
+
+    def cross_phase_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        arrs2 = obj.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj2 = h3d.handle_3d(x2, y2, z2)
+            obj.cross_phase_ensemble(obj2, wid, abcs=abcs, lgtd=lgtd)
+            lst += [obj.ecph]
+
+        self.ecph = handle_4d()
+        self.ecph.set_multi(lst)
+        self.ecph.T = self.T
+
+    def phase_spec_ensemble(self, wid, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.phase_spec_ensemble(wid, abcs=abcs, lgtd=lgtd)
+            lst += [obj.ephase]
+
+        self.ephase = handle_4d()
+        self.ephase.set_multi(lst)
+        self.ephase.T = self.T
+
     def pow_spec(self, pnum=False, abcs=0, lgtd=1, T=None):
         self.hist.input()
         self.transpose(T)
@@ -321,6 +538,27 @@ class handle_4d(handle_graph):
         self.pow.set_multi(lst)
         self.pow.T = self.T
 
+    def phase_spec(self, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.phase_spec(abcs=abcs, lgtd=lgtd)
+            lst += [obj.phase]
+
+        self.phase = handle_4d()
+        self.phase.set_multi(lst)
+        self.phase.T = self.T
+
     def iterp_ave(self, itvl, wid, abcs=0, lgtd=1, T=None):
         self.hist.input()
         self.transpose(T)
@@ -340,7 +578,7 @@ class handle_4d(handle_graph):
         self.iave.set_multi(objlst)
         self.iave.T = self.T
 
-    def slice_same(self, obj, xyz=0, err=0.01, T=None):
+    def slice_same(self, obj, xyz=0, err=0, T=None, round=None):
         self.transpose(T)
         if obj.__module__.split(".")[-1] == "handle_4d":
             obj.transpose(T)
@@ -360,7 +598,7 @@ class handle_4d(handle_graph):
             z = zarr[i] if not zarr is None else None
             obj1 = h3d.handle_3d(x,y,z)
             obj2 = h3d.handle_3d(xarr2[0],xarr2[0],xarr2[0])
-            obj1.slice_same(obj2,xyz, err)
+            obj1.slice_same(obj2,xyz, err, round=round)
             lst += [obj1.slice]
         self.slice = handle_4d()
         self.slice.T = self.T
@@ -466,18 +704,18 @@ class handle_4d(handle_graph):
             
         
 
-    def slice_arr(self, slst, xyz=0, T=None):
+    def slice_arr(self, slst, xyz=0, T=None, err=0):
         self.transpose(T)
             
         arrs,errs = self.get_data(reterr = True)
         arr = arrs[xyz]
         retlst = []
         for i in xrange(len(arr)):
-            xarr = arrs[0][i]
-            yarr = arrs[1][i]
-            zarr = arrs[2][i]
+            xarr = arrs[0][i] if not arrs[0] is None else None
+            yarr = arrs[1][i] if not arrs[1] is None else None
+            zarr = arrs[2][i] if not arrs[2] is None else None
             obj = h3d.handle_3d(xarr, yarr, zarr)
-            if not obj.slice_arr(slst, xyz):
+            if not obj.slice_arr(slst, xyz, err=err):
                 raise ValueError, "Can not sliced"
             retlst += [obj.slice]
         
@@ -634,7 +872,7 @@ class handle_4d(handle_graph):
         z = arrs[3-abcs-lgtd]
         return x, y, z
 
-    def filter_decimation(self, flst, abcs=0, lgtd=1, T=None):
+    def resample(self, flst, prec=10, abcs=0, lgtd=1, T=None):
         self.hist.input()
         self.transpose(T)
         xarr,yarr,zarr, a = self.get_data()
@@ -645,12 +883,105 @@ class handle_4d(handle_graph):
             y = yarr[i] if not yarr is None else None
             z = zarr[i] if not zarr is None else None
             obj = h3d.handle_3d(x, y, z)
-            obj.filter_decimation(flst, abcs, lgtd)
+            obj.resample(flst, prec=prec, abcs=abcs, lgtd=lgtd)
+            lst += [obj.rsmp]
+
+        self.rsmp = handle_4d()
+        self.rsmp.set_multi(lst)
+        self.rsmp.T = self.T
+
+    def filter_decimation2(self, flst, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        xarr,yarr,zarr, a = self.get_data()
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.filter_decimation2(flst, abcs, lgtd)
             lst += [obj.dfilt]
 
         self.dfilt = handle_4d()
         self.dfilt.set_multi(lst)
         self.dfilt.T = self.T
+
+    def runge_kutta_4th(self, abcs=0, lgtd=1, st=None, en=None, h=None, ini_val=None, T=None):
+        from numpy import array, mean
+        from decimal import Decimal
+        self.hist.input()
+        self.transpose(T)
+        xarr,yarr,zarr, a = self.get_data()
+
+        lst = []
+        for i in range(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            tmp_ini_val = ini_val[i] if type(ini_val) == list or not ini_val is None else ini_val
+            obj = h3d.handle_3d(x, y, z)
+            obj.runge_kutta_4th(abcs, lgtd, st, en, h, tmp_ini_val)
+            lst += [obj.rk4]
+
+        self.rk4 = handle_4d()
+        self.rk4.set_multi(lst)
+        self.rk4.T = self.T
+
+    def runge_kutta_4th_tmp(self, abcs=0, lgtd=1, st=0, en=100, h=1, ini_val=None, T=None):
+        from numpy import array, mean
+        from decimal import Decimal
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        x = arrs[abcs]
+        y = arrs[lgtd]
+
+        lst = []
+
+
+        if ini_val is None: ini_val = array(x)
+
+        parr = arange(st, en, h)
+
+     
+        f = array(y)
+        y = ini_val
+        xlst = []
+        ylst = []
+        for i in xrange(len(parr)):
+            y = y + h * f
+            xlst += [x[80][80]]
+            ylst += [y[80][80]]
+
+        arrs[abcs] = append(array([]),array(xlst))
+        arrs[lgtd] = append(array([]),array(ylst))
+
+        self.rk4 = h3d.handle_3d()
+        self.rk4.dinput(arrs)
+        self.rk4.T = self.T
+
+    def euler_method(self, abcs=0, lgtd=1, st=None, en=None, d=None, T=None):
+        from numpy import array, mean
+        from decimal import Decimal
+        self.hist.input()
+        self.transpose(T)
+        xarr,yarr,zarr, a = self.get_data()
+
+        lst = []
+        for i in range(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.euler_method(abcs, lgtd, st, en, d)
+            lst += [obj.euler]
+
+        self.euler = handle_4d()
+        self.euler.set_multi(lst)
+        self.euler.T = self.T
+
 
     def mov_ave(self, wid, abcs=0, lgtd=1, T=None):
         from numpy import array, mean
@@ -672,7 +1003,7 @@ class handle_4d(handle_graph):
         self.mave.set_multi(lst)
         self.mave.T = self.T
 
-    def mov_grad(self, wid, abcs=0, lgtd=1, T=None):
+    def mov_grad(self, wid, abcs=0, lgtd=1, T=None, retL=False):
         from numpy import array, mean
         from decimal import Decimal
         self.hist.input()
@@ -680,18 +1011,39 @@ class handle_4d(handle_graph):
         xarr,yarr,zarr, a = self.get_data()
 
         lst = []
-        for i in range(len(xarr)):
+        for i in xrange(len(xarr)):
             x = xarr[i] if not xarr is None else None
             y = yarr[i] if not yarr is None else None
             z = zarr[i] if not zarr is None else None
             obj = h3d.handle_3d(x, y, z)
-            obj.mov_grad(wid, abcs, lgtd)
+            L = obj.mov_grad(wid, abcs, lgtd, retL=retL)
             lst += [obj.mgrad]
 
         self.mgrad = handle_4d()
         self.mgrad.set_multi(lst)
         self.mgrad.T = self.T
+        if retL: return L
 
+    def sort_theta(self, wid, abcs=0, lgtd=1, T=None):
+        from numpy import array, mean
+        from decimal import Decimal
+        self.hist.input()
+        self.transpose(T)
+        xarr,yarr,zarr, a = self.get_data()
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.sort_theta()
+            lst += [obj.theta]
+
+        self.theta = handle_4d()
+        self.theta.set_multi(lst)
+        self.theta.T = self.T
+        
     def mov_var(self, wid, abcs=0, lgtd=1, T=None):
         self.hist.input()
         self.transpose(T)
@@ -1065,7 +1417,8 @@ class handle_4d(handle_graph):
         gnumlim = len(arrs[abcs])
         if dump:
             dirpath =  fcnt(self.dumppath+"/"+dirname)       
-            os.mkdir(dirpath)
+            dirpath = "/Users/yu/tmpdir199"
+            if not os.path.exists(dirpath): os.mkdir(dirpath)
         plotnum = 0
         snum = 0
         gnum = 0
