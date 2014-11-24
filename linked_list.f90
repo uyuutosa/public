@@ -202,7 +202,7 @@ contains
             if (strchar(list%dtype, "hash")) then
                 if (associated(list%key)) then
                     !call show_list(list%key)
-                    call refer(list%key,get_n(list%key))!原因不明、今のところリストの位置を最後にすることで動作している。要解決。おそらくsplitが原因。
+                    call refer(list%key,get_n(list%key))
                     list%key%curr => null()
                     call list_deallocate(list%key)
                     list%val%curr => null()
@@ -216,7 +216,7 @@ contains
                 end if
             else if (strchar(list%dtype, "list")) then
                 if (associated(list%lst)) then
-                    call refer(list%lst,get_n(list%lst))!原因不明、今のところリストの位置を最後にすることで動作している。要解決。おそらくsplitが原因。
+                    call refer(list%lst,get_n(list%lst))
                     list%lst%curr => null()
                     !print *, get_str(list%lst%dtype)
                     call list_deallocate(list%lst)
