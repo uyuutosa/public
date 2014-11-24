@@ -1,4 +1,4 @@
-#include "tensor.hpp"
+#include "ndarr.hpp"
 
 using namespace std;
 
@@ -60,7 +60,7 @@ int main(){
     cout << "4. Product of dot, cross and diad is suported." << endl;
     cout << "The dot product of a and b is " << endl;
     a.dot(b).view();
-    cout << "The cross product of d and c is " << endl;
+    cout << "The cross product of a and b is " << endl;
     a.cross(b).view();
     cout << "The diadic product of a and b is " << endl;
     a.diad(b).view();
