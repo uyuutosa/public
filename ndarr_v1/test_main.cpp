@@ -7,7 +7,7 @@ int main(){
     ndarr<T> is a thing so-called "N dimensional array".
     This is able to have any dimension.
     "N dimensional array" is maily provided high-level language
-    such as Fortran, Python, Ruby and so on but C++ is not seemed 
+    such as Fortran, Python, MATLAB and so on but C++ is not seemed 
     to be provided.
     C++ is a program which has both high speed performance and high readability. 
     There are realization with genelic programing due to
