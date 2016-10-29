@@ -5,7 +5,7 @@ from modules.essential_utils.obj_util import *
 from modules.essential_utils.convert_util import *
 from modules.essential_utils.file_util import *
 from modules.essential_utils.search_util import *
-from modules.numerical_utils.fit_util import pfit
+from modules.numerical_utils.fit_util import pfit, polyfit2d
 #import modules.numerical_utils.ana_spec as spec
 #from modules.heliac_utils.speana_util import *
 from modules.graph_utils.grace_util.grace_util import * 
@@ -107,8 +107,8 @@ class handle_4d(handle_graph):
         arrs, errs = self.get_data(True)
         if T is None or T != self.T:
             self.dinput(
-                [x.transpose() if not x is None else None for x in arrs],
-                [x.transpose() if not x is None else None for x in errs]
+                [x.T if x is not None else None for x in arrs],
+                [x.T if x is not None else None for x in errs]
                 )
             self.T = False if self.T else True
     
@@ -147,6 +147,13 @@ class handle_4d(handle_graph):
             return [arrlst, errlst]
         else:
             return arrlst
+    def concatenate(self, T=None):
+        self.transpose(T)
+       
+        x = append([], self.x) if self.x is not None else None
+        y = append([], self.y) if self.y is not None else None
+        z = append([], self.z) if self.z is not None else None
+        self.cmb = h3d.handle_3d(x,y,z)
     
     def rid_diff(self, obj, xyz, T=None):
         """
@@ -246,7 +253,6 @@ class handle_4d(handle_graph):
             bin_ytpl = tuple(y[0]) if y[0][1] != y[0][0] else tuple(y.transpose()[0])
             r.set_xyzdata(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), bin_xtpl, bin_ytpl, 0, 0)
         else:
-            input("asdf")
             r.set_xyzdata_tgraph(tuple(x.reshape(x.size).tolist()),  tuple(y.reshape(y.size).tolist()), tuple(z.reshape(z.size).tolist()), 0, 0)
         #r.set_xlim(bin_xtpl[0], bin_xtpl[-1], 0)
         #r.set_ylim(bin_ytpl[0], bin_ytpl[-1], 0)
@@ -466,6 +472,64 @@ class handle_4d(handle_graph):
         self.epow = handle_4d()
         self.epow.set_multi(lst)
         self.epow.T = self.T
+
+    def coherence_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        arrs2 = obj.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj2 = h3d.handle_3d(x2, y2, z2)
+            obj.coherence_ensemble(obj2, wid, abcs=abcs, lgtd=lgtd)
+            lst += [obj.ecoh]
+
+        self.ecoh = handle_4d()
+        self.ecoh.set_multi(lst)
+        self.ecoh.T = self.T
+
+    def cross_spec_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1, T=None):
+        self.hist.input()
+        self.transpose(T)
+        arrs = self.get_data()
+        arrs2 = obj.get_data()
+        xarr = arrs[0]
+        yarr = arrs[1]
+        zarr = arrs[2]
+        xarr2 = arrs2[0]
+        yarr2 = arrs2[1]
+        zarr2 = arrs2[2]
+
+        lst = []
+        for i in xrange(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            x2 = xarr2[i] if not xarr2 is None else None
+            y2 = yarr2[i] if not yarr2 is None else None
+            z2 = zarr2[i] if not zarr2 is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj2 = h3d.handle_3d(x2, y2, z2)
+            obj.cross_spec_ensemble(obj2, wid, abcs=abcs, lgtd=lgtd)
+            lst += [obj.ecross]
+
+        self.ecross = handle_4d()
+        self.ecross.set_multi(lst)
+        self.ecross.T = self.T
 
     def cross_phase_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1, T=None):
         self.hist.input()
@@ -700,7 +764,7 @@ class handle_4d(handle_graph):
         retlst[3-abcs-lgtd] += [retzarr]
         self.pave = handle_4d()
         self.pave.T = True
-        self.pave.dinput(array(retlst))    
+        self.pave.dinput(retlst)    
             
         
 
@@ -983,6 +1047,27 @@ class handle_4d(handle_graph):
         self.euler.T = self.T
 
 
+    def parzen_window(self, wid, abcs=0, lgtd=1, T=None):
+        from numpy import array, mean
+        from decimal import Decimal
+        self.hist.input()
+        self.transpose(T)
+        xarr,yarr,zarr, a = self.get_data()
+
+        lst = []
+        for i in range(len(xarr)):
+            x = xarr[i] if not xarr is None else None
+            y = yarr[i] if not yarr is None else None
+            z = zarr[i] if not zarr is None else None
+            obj = h3d.handle_3d(x, y, z)
+            obj.parzen_window(wid, abcs, lgtd)
+            
+            lst += [obj.parzen]
+
+        self.parzen = handle_4d()
+        self.parzen.set_multi(lst)
+        self.parzen.T = self.T
+        
     def mov_ave(self, wid, abcs=0, lgtd=1, T=None):
         from numpy import array, mean
         from decimal import Decimal
@@ -1229,6 +1314,30 @@ class handle_4d(handle_graph):
         self.gnu.dinput(retlsts)
         self.gnu.fitpara = tmplst
 
+    def polyfit2d(self, axtpl=(0,2,1), M=10, xlst=None, ylst=None, T=None):
+        self.hist.input()
+        self.transpose(T)
+        #self.bindup(wid)
+        arrs = self.get_data()
+        xarr = arrs[axtpl[0]]
+        yarr = arrs[axtpl[1]]
+        zarr = arrs[axtpl[2]]
+
+        #xarr = xarr[0,:] if xarr[0,1] - xarr[0,0] != 0 else xarr[:,0]
+        #yarr = yarr[0,:] if yarr[0,1] - yarr[0,0] != 0 else yarr[:,0]
+        xarr = xarr.reshape(xarr.size)
+        yarr = yarr.reshape(yarr.size)
+        zarr = zarr.reshape(zarr.size)
+
+        x,y,z,k = polyfit2d(xarr, yarr, zarr, M=M, xlst=xlst, ylst=ylst)
+
+        self.pfit2 = handle_4d()
+        self.pfit2.x = x
+        self.pfit2.y = y
+        self.pfit2.z = z
+        self.pfit2.k = k
+        self.pfit2.T = self.T
+
     def polyfit(self, M=8, stnum=None, ennum=None, itvl=1, abcs=2, lgtd=1, T = None, show=False):
         self.transpose(T)
         retlsts = [[],[],[]]
@@ -1332,6 +1441,16 @@ class handle_4d(handle_graph):
         #input(transpose(arrs[3-abcs-lgtd]))
         #input(ylst)
         self.trap = h3d.handle_3d(transpose(arrs[3-abcs-lgtd])[0],array(ylst))
+    def sum(self, T=None):
+        if not T is None:
+            if self.T != T: self.transpose()
+        x = self.x.mean(axis=0) if self.x is not None else None 
+        y = self.y.sum(axis=0)  if self.y is not None else None 
+        z = self.z.mean(axis=0) if self.z is not None else None 
+        self.sumed = h3d.handle_3d(x,y,z)
+        
+        
+        
 
     def trapezoid(self, abcs=2, lgtd=1 ,T=None):
         from modules.numerical_utils.basic_util import trapezoid
@@ -1532,7 +1651,7 @@ class handle_4d(handle_graph):
             gnum = 0
             if len(self.grace.prop.gdiclst): self.grace.set_graphitems()
             self.grace.set_ornament() 
-            self.grace.set_lineall()
+            #self.grace.set_lineall()
             #self.grace.set_xlabel(self.grace.prop.gdiclst[gnum]["xlabel"], gnum)
             self.grace.dumpfig(fcnt(dirpath, filename,device))
             if show:
@@ -1540,6 +1659,8 @@ class handle_4d(handle_graph):
                 input()
             self.grace.initialize()
             plotnum += 1
+        os.system("pdftk %s/*.PDF output %s" %(dirpath, fcnt(self.dumppath, "tevo", device)))
+        print "pdftk %s/*.PDF output %s" %(dirpath, fcnt(self.dumppath, "tevo", device))
 
     def boxview(self, abcs=0, lgtd=1):
         if self.T == False:
