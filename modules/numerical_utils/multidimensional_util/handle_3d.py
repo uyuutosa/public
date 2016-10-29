@@ -7,6 +7,7 @@ from modules.essential_utils.file_util import *
 from modules.essential_utils.search_util import *
 from modules.essential_utils.dir_util import *
 from modules.numerical_utils.fit_util import pfit
+from modules.numerical_utils.tensor_utils.tensor import *
 #import modules.numerical_utils.ana_spec as spec
 from modules.numerical_utils.speana_util import *
 from modules.graph_utils.grace_util.grace_util import * 
@@ -74,19 +75,19 @@ class handle_3d(handle_graph):
         if type(picklepath) == type(None): picklepath = self.picklepath
         o = open(picklepath)
         tmp = pickle.load(o)
-        self.dinput(tmp.get_data(reterr=True))
+        self.dinput(*tmp.get_data(reterr=True))
         self.hist.hlst = tmp.hist.hlst
         self.grace = tmp.grace
         o.close()
 
-    def load_pickle(self, txtpath=None):
-        if type(txtpath) == type(None): txtpath = self.txtpath
-        o = open(txtpath)
-        tmp = txt.load(o)
-        self.dinput(tmp.get_data(reterr=True))
-        self.hist.hlst = tmp.hist.hlst
-        self.grace = tmp.grace
-        o.close()
+    #def load_pickle(self, txtpath=None):
+    #    if type(txtpath) == type(None): txtpath = self.txtpath
+    #    o = open(txtpath)
+    #    tmp = txt.load(o)
+    #    self.dinput(tmp.get_data(reterr=True))
+    #    self.hist.hlst = tmp.hist.hlst
+    #    self.grace = tmp.grace
+    #    o.close()
 
     def backup(self):
         self.hist.input()
@@ -311,6 +312,47 @@ class handle_3d(handle_graph):
         self.root.simplelayout(opt)
         self.root.view_graph()
 
+    def parzen_window(self, wid, abcs=0, lgtd=1,check=False):
+        self.hist.input()
+        from numpy import array, mean
+        from decimal import Decimal
+        arrs,errs = self.get_data(reterr=True)
+        obj = handle_3d(arrs[abcs], arrs[lgtd], arrs[3-abcs-lgtd])
+        dt = (obj.x[1] - obj.x[0])
+        obj.fft()
+        N = (obj.x.size)
+        k = arange(0, 1., 1./obj.ffted.x.size)
+        f = obj.ffted.x 
+        fs = 1. / dt
+        #k = obj.ffted.x * dt * N
+        #L = wid
+        L = int(wid / dt)
+        A = pi *  f * L / fs / 2
+        H = (sin(A) / A) **4 * exp(-1j * pi * f * (L-1) / fs)# / L
+        H[0] = 1.
+        obj.ffted.y *= H
+        obj.ffted.ifft()
+
+        #ave_x = convolve(x, conv_arr)[inum:-(inum-1)]
+        #ave_y = convolve(y, conv_arr)[inum:-(inum-1)]
+        #if check:
+        #    conv_x = arange(0, dt*inum, dt)
+        #    obj = handle_3d(conv_x, conv_arr)
+        #    obj.pow_spec()
+        #    obj.pow.view()
+
+        arrs = obj.ffted.iffted.get_data()
+        #input(len(arrs))
+
+#        self.parzen.x = self.parzen.x[L:] - wid / 2. #Maybe... This convolution is started at right and ended at right.
+#        self.parzen.y = self.parzen.y[L:]
+        
+        arrs[abcs] = arrs[abcs][L:] - wid / 2.
+        arrs[lgtd] = arrs[lgtd][L:]
+        if arrs[3-abcs-lgtd] is not None: arrs[3-abcs-lgtd] = arrs[3-abcs-lgtd][L:]
+        self.parzen = handle_3d()
+        self.parzen.dinput(arrs, errs)
+
     def mov_ave2(self, wid, abcs=0, lgtd=1,check=False):
         self.hist.input()
         from numpy import array, mean
@@ -429,7 +471,6 @@ class handle_3d(handle_graph):
         #input(ave_x[1] - ave_x[0])
         import scipy.signal as s
         ave_y = s.fftconvolve(y, conv_arr)[L-1:len(y)]
-        ave_y = s.fftconvolve(y, conv_arr)[L-1:len(y)]
         ave_z = z[L/2:-(L/2-1)] if not z is None else None
         if ave_y.size != ave_x.size:
             ave_x = ave_x[0:ave_y.size]
@@ -438,7 +479,6 @@ class handle_3d(handle_graph):
         #ave_z = convolve(z, conv_arr)[L:-(L-1)] if not z is None else None
 
         arrs[abcs] = ave_x
-        #input(ave_x[1] - ave_x[0])
         arrs[lgtd] = ave_y
         arrs[3-abcs-lgtd] = ave_z
         self.mave = handle_3d()
@@ -485,6 +525,56 @@ class handle_3d(handle_graph):
             
         arrs[abcs] = x[L/2:-(L/2-1)]
         arrs[lgtd] = a[L-1:-(L-1)] 
+        arrs[3-abcs-lgtd] = z[L/2:-(L/2-1)] if not z is None else None
+        
+        #align
+
+        obj = handle_3d()
+        obj.dinput(arrs, errs)
+        N = obj.y.size
+        if obj.x is not None: obj.x = obj.x[0:N]
+        if obj.z is not None: obj.z = obj.z[0:N]
+        #input(x[0])
+        #input(x[-1] - wid)
+        #input(obj.z)
+        #input(obj.x)
+        #input(obj.y)
+        #print obj.x
+        #print obj.y
+        #print obj.z
+        #print dt 
+        
+        #####obj.slice_arr([x[0], x[-1] - wid], xyz=abcs)
+        #input(obj.x)
+        #input(obj.z)
+        self.mgrad = obj#.slice
+        if retL: return L
+
+    def mov_grad2(self, wid, abcs=0, lgtd=1, retL=False):
+        self.hist.input()
+        from numpy import array, mean
+        from decimal import Decimal
+        arrs,errs = self.get_data(reterr=True)
+        x = arrs[abcs]
+        y = arrs[lgtd]
+        z = arrs[3-abcs-lgtd]
+        xy = x * y
+        dt = (x[1] - x[0])
+        L = abs(int(wid/dt)) 
+        h = ones(L)
+        
+
+        x2 = x[L/2:-(L/2-1)]
+
+        conv_x = convolve(h, x)
+        numerator = (L * convolve(h, xy) - conv_x * convolve(h, y))[L-1:-(L-1)] 
+        denominator = (L ** 2. * (x2 - x2**2. + dt**2. * (2.*L-1.)*(L-1.)/6. - dt ** 2. * (L -1.) ** 2. / 4.))
+        a = numerator / denominator
+
+
+            
+        arrs[abcs] = x2
+        arrs[lgtd] = a
         arrs[3-abcs-lgtd] = z[L/2:-(L/2-1)] if not z is None else None
         
         #align
@@ -1106,6 +1196,251 @@ class handle_3d(handle_graph):
         self.mvi = handle_3d() #mean VI
         self.mvi.dinput(arrs)
 
+    def bispectrum_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1):
+        self.hist.input()
+        arrs = self.get_data()
+        x = arrs[abcs]
+        y = arrs[lgtd]
+        z = arrs[3 - abcs - lgtd]
+
+        arrs2 = obj.get_data()
+        x2 = arrs2[abcs]
+        y2 = arrs2[lgtd]
+        z2 = arrs2[3 - abcs - lgtd]
+
+        d = float(x[1] - x[0]) 
+        n = int(wid / d)
+
+        if x is not None: x = x[0:x.size - x.size % n]
+        if y is not None: y = y[0:y.size - y.size % n] 
+        if z is not None: z = z[0:z.size - z.size % n]
+        if x2 is not None: x2 = x2[0:x.size - x.size % n]
+        if y2 is not None: y2 = y2[0:y.size - y.size % n] 
+        if z2 is not None: z2 = z2[0:z.size - z.size % n]
+
+
+
+        y = hsplit(y, y.size/n) 
+        y2 = hsplit(y2, y2.size/n) 
+
+        y_t = tensor(y, idx="ki", ud="d")
+        y2_t = tensor(y2, idx="kj", ud="d")
+        #y3_t = y_t * y2_t
+
+        #y3_t.transpose("ij")
+        #y3 = y3_t.arr
+
+        freq = fft.fftfreq(len(y[0]), d) 
+        N1 = freq.size
+        freq = roll(freq, N1/2)
+        freq_n = arange(N1)
+        freq2 = fft.fftfreq(len(y2[0]), d)
+        N2 = freq2.size
+        freq2 = roll(freq2, N2/2)
+        freq2_n = arange(N2)
+
+        freq_t = tensor(freq, idx="i", ud="d")
+        freq2_t = tensor(freq2, idx="j", ud="d")
+        freq_n_t = tensor(freq_n, idx="i", ud="d")
+        freq2_n_t = tensor(freq2_n, idx="j", ud="d")
+        freq3_t = freq_t + freq2_t
+        freq3_n_t = freq_n_t + freq2_n_t - N1/2
+
+        freq3_t.transpose("ij")
+        freq3_n_t.transpose("ij")
+        freq3 = freq3_t.arr
+        freq3_n = freq3_n_t.arr
+
+        X = fft.fft(y)
+        X = roll(X, N1/2)
+
+        X_t = tensor(X, idx="ki", ud="dd")
+        k_t = tensor(ones(len(X)), idx="k", ud="u")
+        Y = fft.fft(y2)
+        Y = roll(Y, N2/2)
+
+        Y_t = tensor(Y, idx="kj", ud="dd")
+
+        #Z = array([X[n, where(freq3_n >= freq.size, 0, freq3_n).astype(int)] for n in range(k_t.arr.size)]) * where(freq3_n >= freq.size, nan, freq3_n)
+        Z = array([X[n, where((freq3_n>0) & (freq3_n < freq.size), freq3_n, 0).astype(int)] for n in range(k_t.arr.size)]) * where((freq3_n>0) & (freq3_n < freq.size), freq3_n, nan)
+        Z = Z.conj()
+        Z_t = tensor(Z, idx="kij", ud="ddd")
+
+        XYZ = abs((X_t * Y_t * Z_t * k_t).arr) 
+        XYZ[XYZ!=XYZ] = 0
+
+        arrs[abcs] = tile(freq, (N2,1)).T
+        arrs[lgtd] = XYZ
+        arrs[3 - abcs - lgtd] = tile(freq2, (N1,1))
+
+        self.besp = h4d.handle_4d()
+        self.besp.dinput(arrs)
+
+    def bicoherence_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1):
+        self.hist.input()
+        arrs = self.get_data()
+        x = arrs[abcs]
+        y = arrs[lgtd]
+        z = arrs[3 - abcs - lgtd]
+
+        arrs2 = obj.get_data()
+        x2 = arrs2[abcs]
+        y2 = arrs2[lgtd]
+        z2 = arrs2[3 - abcs - lgtd]
+
+        d = float(x[1] - x[0]) 
+        n = int(wid / d)
+
+        if x is not None: x = x[0:x.size - x.size % n]
+        if y is not None: y = y[0:y.size - y.size % n] 
+        if z is not None: z = z[0:z.size - z.size % n]
+        if x2 is not None: x2 = x2[0:x.size - x.size % n]
+        if y2 is not None: y2 = y2[0:y.size - y.size % n] 
+        if z2 is not None: z2 = z2[0:z.size - z.size % n]
+
+
+
+        y = hsplit(y, y.size/n) 
+        y2 = hsplit(y2, y2.size/n) 
+
+        y_t = tensor(y, idx="ki", ud="d")
+        y2_t = tensor(y2, idx="kj", ud="d")
+        #y3_t = y_t * y2_t
+
+        #y3_t.transpose("ij")
+        #y3 = y3_t.arr
+
+        freq = fft.fftfreq(len(y[0]), d) 
+        N1 = freq.size
+        freq = roll(freq, N1/2)
+        freq_n = arange(N1)
+        freq2 = fft.fftfreq(len(y2[0]), d)
+        N2 = freq2.size
+        freq2 = roll(freq2, N2/2)
+        freq2_n = arange(N2)
+
+        freq_t = tensor(freq, idx="i", ud="d")
+        freq2_t = tensor(freq2, idx="j", ud="d")
+        freq_n_t = tensor(freq_n, idx="i", ud="d")
+        freq2_n_t = tensor(freq2_n, idx="j", ud="d")
+        freq3_t = freq_t + freq2_t
+        freq3_n_t = freq_n_t + freq2_n_t - N1/2
+
+        freq3_t.transpose("ij")
+        freq3_n_t.transpose("ij")
+        freq3 = freq3_t.arr
+        freq3_n = freq3_n_t.arr
+
+        X = fft.fft(y)
+        X = roll(X, N1/2)
+
+        X_t = tensor(X, idx="ki", ud="dd")
+        k_t = tensor(ones(len(X)), idx="k", ud="u")
+        Y = fft.fft(y2)
+        Y = roll(Y, N2/2)
+
+        Y_t = tensor(Y, idx="kj", ud="dd")
+
+        Z = array([X[n, where((freq3_n>0) & (freq3_n < freq.size), freq3_n, 0).astype(int)] for n in range(k_t.arr.size)]) * where((freq3_n>0) & (freq3_n < freq.size), freq3_n, nan)
+        Z = Z.conj()
+        #Z = array([for i in X[where(freq3 >= freq.size, 0, freq3).astype(int)] * where(freq3 >= freq.size, nan, freq3)])
+        Z_t = tensor(Z, idx="kij", ud="ddd")
+
+        B_t = t_abs(X_t * Y_t * Z_t * k_t) ** 2
+        denom_t = ((t_abs(X_t * Y_t )**2) * k_t) * ((t_abs(Z_t) ** 2) * k_t)
+        bicoh_t = B_t / denom_t
+        bicoh_t.transpose("ij")
+        bicoh = bicoh_t.arr
+        bicoh[bicoh!=bicoh] = 0
+
+        arrs[abcs] = tile(freq, (N2,1)).T
+        arrs[lgtd] = bicoh 
+        arrs[3 - abcs - lgtd] = tile(freq2, (N1,1))
+        #if not z is None: arrs[3 - abcs - lgtd] = z
+        self.bech = h4d.handle_4d()
+        self.bech.dinput(arrs)
+
+    def biphase_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1):
+        self.hist.input()
+        arrs = self.get_data()
+        x = arrs[abcs]
+        y = arrs[lgtd]
+        z = arrs[3 - abcs - lgtd]
+
+        arrs2 = obj.get_data()
+        x2 = arrs2[abcs]
+        y2 = arrs2[lgtd]
+        z2 = arrs2[3 - abcs - lgtd]
+
+        d = float(x[1] - x[0]) 
+        n = int(wid / d)
+
+        if x is not None: x = x[0:x.size - x.size % n]
+        if y is not None: y = y[0:y.size - y.size % n] 
+        if z is not None: z = z[0:z.size - z.size % n]
+        if x2 is not None: x2 = x2[0:x.size - x.size % n]
+        if y2 is not None: y2 = y2[0:y.size - y.size % n] 
+        if z2 is not None: z2 = z2[0:z.size - z.size % n]
+
+
+
+        y = hsplit(y, y.size/n) 
+        y2 = hsplit(y2, y2.size/n) 
+
+        y_t = tensor(y, idx="ki", ud="d")
+        y2_t = tensor(y2, idx="kj", ud="d")
+        #y3_t = y_t * y2_t
+
+        #y3_t.transpose("ij")
+        #y3 = y3_t.arr
+
+        freq = fft.fftfreq(len(y[0]), d)
+        N1 = freq.size
+        freq = roll(freq, N1/2)
+        freq_n = arange(N1)
+        freq2 = fft.fftfreq(len(y2[0]), d)
+        N2 = freq2.size
+        freq2 = roll(freq2, N2/2)
+        freq2_n = arange(N2)
+
+        freq_t = tensor(freq, idx="i", ud="d")
+        freq2_t = tensor(freq2, idx="j", ud="d")
+        freq_n_t = tensor(freq_n, idx="i", ud="d")
+        freq2_n_t = tensor(freq2_n, idx="j", ud="d")
+        freq3_t = freq_t + freq2_t
+        freq3_n_t = freq_n_t + freq2_n_t - N1/2
+
+        freq3_t.transpose("ij")
+        freq3_n_t.transpose("ij")
+        freq3 = freq3_t.arr
+        freq3_n = freq3_n_t.arr
+
+        X = fft.fft(y)
+        X = roll(X, N1/2)
+
+
+        X_t = tensor(X, idx="ki", ud="dd")
+        k_t = tensor(ones(len(X)), idx="k", ud="u")
+        Y = fft.fft(y2)
+        Y_t = tensor(Y, idx="kj", ud="dd")
+
+        #Z = array([X[n, where(freq3_n >= freq.size, 0, freq3_n).astype(int)] for n in range(k_t.arr.size)]) * where(freq3_n >= freq.size, nan, freq3_n)
+        Z = array([X[n, where((freq3_n>0) & (freq3_n < freq.size), freq3_n, 0).astype(int)] for n in range(k_t.arr.size)]) * where((freq3_n>0) & (freq3_n < freq.size), freq3_n, nan)
+        Z = Z.conj()
+        #Z = array([for i in X[where(freq3 >= freq.size, 0, freq3).astype(int)] * where(freq3 >= freq.size, nan, freq3)])
+        Z_t = tensor(Z, idx="kij", ud="ddd")
+
+        B= (X_t * Y_t * Z_t * k_t).arr 
+        biphase = angle(B.conj())
+        biphase[biphase!=biphase] = 0
+
+        arrs[abcs] = tile(freq, (N2,1)).T
+        arrs[lgtd] = biphase
+        arrs[3 - abcs - lgtd] = tile(freq2, (N1,1))
+        #if not z is None: arrs[3 - abcs - lgtd] = z
+        self.beph = h4d.handle_4d()
+        self.beph.dinput(arrs)
+
     def coherence_ensemble(self, obj, wid, pnum=False, abcs=0, lgtd=1):
         self.hist.input()
         arrs = self.get_data()
@@ -1213,12 +1548,18 @@ class handle_3d(handle_graph):
         y2 = hsplit(y2, y2.size/n) 
 
         dlen = len(y[0])
+        X = fft.fft(y)
+        Y = fft.fft(y2)
         XY = (X * Y.conj()).transpose().mean(axis=1)[0:dlen/2]
+        X = X.transpose().mean(axis=1)
+        Y = Y.transpose().mean(axis=1)
         freq = fft.fftfreq(dlen, d)[0:dlen/2]
         ecross =  XY /(X.size * Y.size)
        
         arrs[abcs] = freq
         arrs[lgtd] = ecross
+        #arrs[abcs] = roll(freq, freq.size/2)
+        #arrs[lgtd] = roll(ecross, ecross.size/2)
         if not z is None: arrs[3 - abcs - lgtd] = z[0:dlen/2] 
         self.ecross = handle_3d()
         self.ecross.dinput(arrs)
@@ -1465,7 +1806,7 @@ class handle_3d(handle_graph):
 
         arrs[abcs] = arange(self.st_ab, self.en_ab, self.d_ab)
         tmp_size = len(arrs[lgtd])
-        arrs[lgtd] = fft.ifft(arrs[lgtd]).real
+        arrs[lgtd] = fft.ifft(arrs[lgtd])
         if tmp_size != arrs[lgtd].size:
             arrs[abcs] = linspace(self.st_ab, self.en_ab, arrs[lgtd].size)
         #arrs[lgtd] = myifft(arrs[lgtd], arrs[abcs].size).real
@@ -1558,15 +1899,21 @@ class handle_3d(handle_graph):
         self.hist.input()    
         obj = handle_3d()
         obj.dinput(self.get_data())
-        obj.rfft(abcs=abcs,lgtd=lgtd)
-        obj.rffted.punch_out(plst, abcs, inv, 0)
-        obj.rffted.pout.st_ab = obj.rffted.st_ab
-        obj.rffted.pout.en_ab = obj.rffted.en_ab
-        obj.rffted.pout.d_ab = obj.rffted.d_ab
-        o = obj.rffted.pout
+        obj.fft(abcs=abcs,lgtd=lgtd)
+        obj.ffted.punch_out(plst, abcs, inv, 0)
+        obj.ffted.pout.st_ab = obj.ffted.st_ab
+        obj.ffted.pout.en_ab = obj.ffted.en_ab
+        obj.ffted.pout.d_ab = obj.ffted.d_ab
+#        obj.rfft(abcs=abcs,lgtd=lgtd)
+#        obj.rffted.punch_out(plst, abcs, inv, 0)
+#        obj.rffted.pout.st_ab = obj.rffted.st_ab
+#        obj.rffted.pout.en_ab = obj.rffted.en_ab
+#        obj.rffted.pout.d_ab = obj.rffted.d_ab
+        o = obj.ffted.pout
 #        o.y[o.y.size/2:] = o.y[o.y.size/2:0:-1].conj()
-        o.irfft()
-        self.filt = o.irffted
+        o.ifft()
+        self.filt = o.iffted
+        self.filt.y = self.filt.y.real
         if cut:
             wmax = plst[0][1]
             d = self.filt.x[1] - self.filt.x[0]
@@ -1574,7 +1921,7 @@ class handle_3d(handle_graph):
             self.filt.x = self.filt.x[:: around(1./(d * (weight * wmax)))]
             #input(o.x)
             self.filt.y = self.filt.y[:: around(1./(d * (weight * wmax)))]
-            #obj.y = obj.y[:: around(1./(d * (2 * wmax)))]
+            bj.y = obj.y[:: around(1./(d * (2 * wmax)))]
 
 
     def resample(self, fs, prec=10, abcs=0, lgtd=1):
@@ -1879,6 +2226,20 @@ class handle_3d(handle_graph):
         if retnum:
             return num
 
+    def sort(self, xyz=0):
+        self.hist.input()
+        arrs = copy.deepcopy(self.get_data())
+        idx = argsort(arrs[xyz])
+        for i in xrange(len(arrs)):
+            arr = arrs[i]
+            if arr is not None:
+                arr = arr[idx]
+            arrs[i] = arr
+        self.sorted = handle_3d()
+        self.sorted.dinput(arrs)
+
+        
+        self.dinput(map(lambda x: sorted(x) if type(x) != type(None) else None, self.get_data()))
 
     def get_data(self, reterr=False):
         x = array(self.x) if type(self.x) != type(None) else None
@@ -1897,10 +2258,9 @@ class handle_3d(handle_graph):
             return arrlst
 
     def dinput(self, arrlst, errlst=None):
-        #input(arrlst)
         self.x = array(arrlst[0]) if type(arrlst[0]) != type(None) else None
         self.y = array(arrlst[1]) if type(arrlst[1]) != type(None) else None
-        self.z = array(arrlst[2]) if type(arrlst[2]) != type(None) else None
+        if arrlst[2] is not None : self.z = array(arrlst[2]) 
         #input(array(arrlst[0]))
         #input(self.x)
         if errlst:
@@ -1918,8 +2278,9 @@ class handle_3d(handle_graph):
         wpath = wpath if wpath else self.wpath 
         self.write.simpledump(wpath, self.get_data(), tag="%s, %s, %s"%(self.xname, self.yname, self.zname))
         
-    def view(self, layout="1", abcs=0, lgtd=1, logx=False, logy=False):
+    def view(self, layout="1", abcs=0, lgtd=1, logx=False, logy=False, real=None):
         layout = str(layout)
+
         layoutdic = {
                      "1"      : self.grace.layout_1,
                      "1_2"      : self.grace.layout_1_2,
@@ -1943,6 +2304,8 @@ class handle_3d(handle_graph):
         self.set_xaxes(1,0) if logx == True else self.set_xaxes(0,0)
         self.set_yaxes(1,0) if logy == True else self.set_yaxes(0,0)
         arrs,errs = self.get_data(reterr=True)
+        if real is not None:
+            arrs[lgtd] = arrs[lgtd].real if real else arrs[lgtd].imag
         if type(errs[lgtd]) == type(None):
             #arrs[abcs], arrs[lgtd] = self.grace.set_xydata(array(arrs[abcs]), array(arrs[lgtd]))
             self.grace.set_xydata(array(arrs[abcs]), array(arrs[lgtd]))
@@ -1979,7 +2342,7 @@ class handle_3d(handle_graph):
 
         self.grace.open_grace()
         self.grace.initialize()
-        self.dinput(arrs)
+        #self.dinput(arrs)
 
     def view_col(self,  layout="simple", axtpl=(0,1,2), device="png", opt="colz", palette="simple"):
         from modules.graph_utils.root_util.root_util import root_util
